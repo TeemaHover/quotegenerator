@@ -2,6 +2,7 @@
 import React, { useState, useEffect } from "react";
 import Quote from "./quote";
 import axios from "axios";
+import Image from "next/image";
 
 const QuoteGenerator: React.FC = () => {
   const url = "https://api.quotable.io/random";
@@ -60,14 +61,34 @@ const QuoteGenerator: React.FC = () => {
       .then((data) => {
         setQuote(data);
       });
-    console.log(quote.content);
-    console.log(quote.tags);
   };
+
+  const [image, setImage] = useState("");
+  async function generateImage(): Promise<any> {
+    const response = await fetch(`api/generate`, {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+      },
+      body: JSON.stringify({
+        prompt: `${quote.tags}`,
+      }),
+    });
+    console.log(response);
+    const data = await response.json();
+
+    console.log(data);
+
+    setImage(data.url);
+  }
 
   return (
     <div className="quote-generator flex justify-center items-center flex-col">
       <button
-        onClick={getNewQuote}
+        onClick={function (event) {
+          getNewQuote();
+          generateImage();
+        }}
         className="text-blue-200 border-solid border-2 border-white rounded-md p-3 mb-5"
       >
         Get New Quote
@@ -75,6 +96,12 @@ const QuoteGenerator: React.FC = () => {
       <div>
         <Quote text={quote.content} author={quote.author} />
       </div>
+      {image && (
+        <>
+          <Image className="image-result" src={image} alt="ai generated" />
+        </>
+      )}
+      <div></div>
     </div>
   );
 };
