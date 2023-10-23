@@ -3,33 +3,12 @@ import React, { useState, useEffect } from "react";
 import Quote from "./quote";
 import axios from "axios";
 import Image from "next/image";
+import { METHODS } from "http";
+import { Content } from "next/font/google";
 
 const QuoteGenerator: React.FC = () => {
   const url = "https://api.quotable.io/random";
-  // const url = 'https://quotes-api8.p.rapidapi.com/quotes/random';
-  // const options = {
-  //     method: 'GET',
-  //     headers: {
-  //         'X-RapidAPI-Key': '474b5ca236mshe2492f368536e07p1721c0jsn63aba7dc079a',
-  //         'X-RapidAPI-Host': 'quotes-api8.p.rapidapi.com'
-  //     }
-  // };
-
-  // const sendMessage = (message) =>{
-  //     const url =
-  // }
-
-  // const callAPI = async () => {
-  //     try {
-  //         const res = await fetch(
-  //             url, options
-  //         );
-  //         const data = await res.json();
-  //         console.log(data);
-  //     } catch (err) {
-  //         console.log(err);
-  //     }
-  // };
+  const accessKey = 'IY551ZQ33t1tc4sxI16PTTefWVZEBIbIapWCOkmMmi0';
 
   const [quote, setQuote] = useState<{
     content: string;
@@ -41,53 +20,83 @@ const QuoteGenerator: React.FC = () => {
     tags: "",
   });
 
-  // useEffect(() => {
-  //     fetch(url, options)
-  //         .then((response) => response.json())
-  //         .then((data) => {
-  //             setQuote(data);
-  //         });
-  // }, []);
+  const emptyQuote = {content:"",author:"",tags:""}
 
-  const getNewQuote = () => {
-    // fetch(url, options)
-    //     .then((response) => response.json())
-    //     .then((data) => {
-    //         setQuote(data);
-    //     });
-    // console.log(quote.quote)
-    fetch(url)
-      .then((response) => response.json())
-      .then((data) => {
+  const [query, setQuery] = useState('');
+  const [images, setImages] = useState('');
+
+  const getNewQuote = async () => {
+    try {
+      const response = await fetch(url);
+      if (response.ok) {
+        const data = await response.json();
         setQuote(data);
-      });
+        setQuery(data.tags)
+        console.log(data.tags)
+        
+      } else {
+        console.error("Failed to fetch a new quote. Status:", response.status);
+      }
+      
+      
+        
+    } catch (error) {
+      console.error("An error occurred while fetching a new quote:", error);
+    }
+    
   };
 
-  const [image, setImage] = useState("");
-  async function generateImage(): Promise<any> {
-    const response = await fetch(`api/generate`, {
-      method: "POST",
+  
+
+  const handleSearch = async () => {
+    try {
+      const response = await fetch(`/api/unsplash?query=${quote.tags}`,{
+        method:"GET"
+      });
+      if (response.ok) {
+        const data = await response.json();
+        setImages(data);
+      } else {
+        console.error('Error fetching images');
+      }
+    } catch (error) {
+      console.error(error);
+    }
+  };
+ 
+  async function postData(url = "") {
+    console.log(url)
+    const response = await fetch(url, {
+      method: "GET",
       headers: {
         "Content-Type": "application/json",
       },
-      body: JSON.stringify({
-        prompt: `${quote.tags}`,
-      }),
     });
-    console.log(response);
-    const data = await response.json();
+    
+    let index = Math.floor(Math.random() * 10)
+    console.log(index)
 
-    console.log(data);
-
-    setImage(data.url);
+    if (response.ok) {
+      const data = await response.json();
+      setImages(data.results[index].urls.raw);
+      console.log(data.results[index].urls.raw)
+    } else {
+      console.error('Error fetching images');
+    }
   }
+  
 
+
+  
   return (
     <div className="quote-generator flex justify-center items-center flex-col">
       <button
         onClick={function (event) {
+          setQuote(emptyQuote)
+          setImages("")
           getNewQuote();
-          generateImage();
+          // handleSearch();
+          postData(`https://api.unsplash.com/search/photos?query=${quote.tags[0]}&client_id=${accessKey}`)
         }}
         className="text-blue-200 border-solid border-2 border-white rounded-md p-3 mb-5"
       >
@@ -96,9 +105,10 @@ const QuoteGenerator: React.FC = () => {
       <div>
         <Quote text={quote.content} author={quote.author} />
       </div>
-      {image && (
+      {images && (
         <>
-          <Image className="image-result" src={image} alt="ai generated" />
+          <Image  className="image-result" src={images} width={512} height={512} alt="ai generated" />
+          
         </>
       )}
       <div></div>
