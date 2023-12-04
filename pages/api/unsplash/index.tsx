@@ -1,11 +1,20 @@
 import axios from 'axios';
 import { NextApiRequest, NextApiResponse } from 'next';
+const unsplashApi = axios.create({
+  baseURL: 'https://api.unsplash.com',
+});
 
 export default async function handler(req:NextApiRequest, res:NextApiResponse) {
-  if (req.method === 'GET') {
+
+  const {method} = req
+  
+  if (method === 'GET') {
     const query = req.query.query;
     const accessKey = 'IY551ZQ33t1tc4sxI16PTTefWVZEBIbIapWCOkmMmi0'; // Replace with your Unsplash access key
     const apiUrl = `https://api.unsplash.com/search/photos?query=${query}&client_id=${accessKey}`;
+    const temp = "https://api.unsplash.com/search/photos?query=wisdom&client_id=IY551ZQ33t1tc4sxI16PTTefWVZEBIbIapWCOkmMmi0"
+
+    console.log(temp)
 
     try {
       const response = await axios.get(apiUrl);
@@ -19,3 +28,5 @@ export default async function handler(req:NextApiRequest, res:NextApiResponse) {
     res.status(405).json({ error: 'Method Not Allowed' });
   }
 }
+
+

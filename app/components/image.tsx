@@ -9,11 +9,11 @@ const ShowImage: React.FC<ImageProps> = ({ url }) => {
   return (
     <div>
       <Image
-        className="image-result"
+        className="object-cover w-full h-[400px] rounded-md"
         src={url}
         width={512}
-        height={512}
-        alt="ai generated"
+        height={256}
+        alt={'unsplash'}
       />
     </div>
   );
