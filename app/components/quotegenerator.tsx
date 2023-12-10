@@ -3,9 +3,7 @@ import React, { useState, useEffect, Suspense } from "react";
 import Quote from "./quote";
 import axios from "axios";
 
-import { METHODS } from "http";
-import { Content } from "next/font/google";
-import LinearProgress from "@mui/material/LinearProgress";
+
 import Loading from "./loading";
 import ShowImage from "./image";
 
@@ -44,7 +42,7 @@ const QuoteGenerator: React.FC = () => {
     }
   };
 
-  let stored_id = "https://images.unsplash.com/photo-1557724630-96de91632c3b?ixid=M3w1MTYxNTl8MHwxfHNlYXJjaHwxfHx1bmRlZmluZWR8ZW58MHx8fHwxNzAxMDU1NDE4fDA&ixlib=rb-4.0.3";
+  //let stored_id = "https://images.unsplash.com/photo-1557724630-96de91632c3b?ixid=M3w1MTYxNTl8MHwxfHNlYXJjaHwxfHx1bmRlZmluZWR8ZW58MHx8fHwxNzAxMDU1NDE4fDA&ixlib=rb-4.0.3";
 
   const handleSearch = async () => {
     try {
@@ -55,7 +53,7 @@ const QuoteGenerator: React.FC = () => {
       });
 
       if (response.status === 200) {
-        
+
         setImages(response.data[1].urls.raw);
         console.log(response.data[1].urls.raw);
         setIsLoading(false);
@@ -68,6 +66,8 @@ const QuoteGenerator: React.FC = () => {
   };
 
   const [combinedImage, setCombinedImage] = useState<string | null>(null);
+  const [downloadInitiated, setDownloadInitiated] = useState(false);
+
 
   const combineImageAndQuote = async () => {
     try {
@@ -77,8 +77,8 @@ const QuoteGenerator: React.FC = () => {
       }
 
       const image = new Image();
-      image.src = images
-      image.crossOrigin = "anonymous"
+      image.src = images;
+      image.crossOrigin = "anonymous";
 
       await image.decode();
 
@@ -93,17 +93,42 @@ const QuoteGenerator: React.FC = () => {
         return;
       }
 
+
       ctx.drawImage(image, 0, 0, canvas.width, canvas.height);
+
+
+      ctx.fillStyle = "rgba(0, 0, 0, 0.7)";
+      ctx.fillRect(0, 0, canvas.width, canvas.height);
+
+
+      const textFieldWidth = (3 / 4) * canvas.width;
+
 
       ctx.font = "11px Arial";
       ctx.fillStyle = "white";
       ctx.textAlign = "center";
-      ctx.fillText(quote.content, canvas.width / 2, canvas.height / 2);
-      console.log(canvas)
+
+
+      const textX = canvas.width / 2;
+
+
+      const textY = canvas.height / 2;
+
+
+      ctx.fillText(quote.content, textX, textY, textFieldWidth);
+
+
+      const authorY = textY + 20;
+      ctx.fillText(`${quote.author}`, textX, authorY, textFieldWidth);
+
       const combinedImageUrl = canvas.toDataURL("image/png");
-      console.log("check this:",combinedImage)
+      console.log("check this:", combinedImageUrl);
       setCombinedImage(combinedImageUrl);
-      
+      console.log("Combine ended");
+      if (!downloadInitiated) {
+        setDownloadInitiated(true);
+        handleDownload();
+      }
     } catch (error) {
       console.error("Error combining image and quote:", error);
     }
@@ -111,6 +136,7 @@ const QuoteGenerator: React.FC = () => {
 
   const handleDownload = () => {
     if (combinedImage) {
+      console.log("download started");
       const downloadLink = document.createElement("a");
       downloadLink.href = combinedImage;
       downloadLink.download = "quote_image.png";
@@ -124,6 +150,12 @@ const QuoteGenerator: React.FC = () => {
     setQuote(emptyQuote);
     setImages("");
   };
+  useEffect(() => {
+    if (downloadInitiated) {
+      handleDownload();
+      setDownloadInitiated(false);
+    }
+  }, [downloadInitiated]);
   return (
     <div className="relative quote-generator flex justify-center items-center flex-col ">
       <button
@@ -151,10 +183,10 @@ const QuoteGenerator: React.FC = () => {
             <ShowImage url={images} />
             <div className="absolute top-0 left-0 w-full h-full bg-black opacity-70 rounded-md"></div>
             <div className=" absolute top-10 -right-16 p-5 bg-blue-300 text-white rounded-sm">
-              
+
               <p>{quote.tags[0]}</p>
             </div>
-            
+
           </div>
           <button
             onClick={async function () {
@@ -162,13 +194,13 @@ const QuoteGenerator: React.FC = () => {
               await combineImageAndQuote();
 
               // Handle the search based on the new quote
-              await handleDownload();
+
             }}
-            className="text-blue-300 border-solid border-2 border-blue-300 rounded-md p-3 mb-5"
+            className="text-blue-300 border-solid border-2 border-blue-300 rounded-md p-3 mb-5 mt-5"
           >
             Download
           </button>
-          
+
         </>
       )}
     </div>
