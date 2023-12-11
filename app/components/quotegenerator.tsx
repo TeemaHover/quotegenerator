@@ -1,5 +1,5 @@
 "use client";
-import React, { useState, useEffect, Suspense } from "react";
+import React, { useState, useEffect } from "react";
 import Quote from "./quote";
 import axios from "axios";
 
@@ -13,14 +13,14 @@ const QuoteGenerator: React.FC = () => {
   const [quote, setQuote] = useState<{
     content: string;
     author: string;
-    tags: string;
+    tags: [];
   }>({
     content: "",
     author: "",
-    tags: "",
+    tags: [],
   });
 
-  const emptyQuote = { content: "", author: "", tags: "" };
+
   const [isLoading, setIsLoading] = useState(false);
 
   const [images, setImages] = useState("");
@@ -31,7 +31,11 @@ const QuoteGenerator: React.FC = () => {
       const response = await fetch(url);
       if (response.ok) {
         const data = await response.json();
-        setQuote(data);
+        setQuote({
+          content: data.content,
+          author: data.author,
+          tags: data.tags,
+        });
         console.log(data.tags);
       } else {
         console.error("Failed to fetch a new quote. Status:", response.status);
@@ -42,20 +46,26 @@ const QuoteGenerator: React.FC = () => {
     }
   };
 
-  //let stored_id = "https://images.unsplash.com/photo-1557724630-96de91632c3b?ixid=M3w1MTYxNTl8MHwxfHNlYXJjaHwxfHx1bmRlZmluZWR8ZW58MHx8fHwxNzAxMDU1NDE4fDA&ixlib=rb-4.0.3";
-
+  let stored_id = "https://images.unsplash.com/photo-1557724630-96de91632c3b?ixid=M3w1MTYxNTl8MHwxfHNlYXJjaHwxfHx1bmRlZmluZWR8ZW58MHx8fHwxNzAyMjc2NjM0fDA&ixlib=rb-4.0.3";
+  let randomIndex = Math.floor(Math.random() * images.length);
   const handleSearch = async () => {
     try {
       const response = await axios.get(`/api/unsplash`, {
         params: {
-          query: quote.tags[0],
+          query: quote.tags,
         },
       });
 
       if (response.status === 200) {
-
-        setImages(response.data[1].urls.raw);
-        console.log(response.data[1].urls.raw);
+        
+        randomIndex = Math.floor(Math.random() * 10);
+        if(stored_id !== response.data[randomIndex].urls.raw){
+          setImages(response.data[randomIndex].urls.raw);
+        }else{
+          setImages(response.data[randomIndex + 1].urls.raw);
+        }
+       
+        console.log(response.data[randomIndex].urls.raw);
         setIsLoading(false);
       } else {
         console.error("Error fetching images");
@@ -124,7 +134,25 @@ const QuoteGenerator: React.FC = () => {
       const combinedImageUrl = canvas.toDataURL("image/png");
       console.log("check this:", combinedImageUrl);
       setCombinedImage(combinedImageUrl);
+
+      try {
+        const response = await axios.post('/api/saveQuote', {
+          content: quote.content,
+          author: quote.author,
+          tags: quote.tags,
+          image: images,
+        });
+        if (response.status === 201) {
+          console.log("Added to DB")
+        } else {
+          console.log("There are error")
+        }
+      } catch (error) {
+        console.log("Error: ", error)
+      }
+
       console.log("Combine ended");
+
       if (!downloadInitiated) {
         setDownloadInitiated(true);
         handleDownload();
@@ -135,6 +163,7 @@ const QuoteGenerator: React.FC = () => {
   };
 
   const handleDownload = () => {
+
     if (combinedImage) {
       console.log("download started");
       const downloadLink = document.createElement("a");
@@ -147,7 +176,11 @@ const QuoteGenerator: React.FC = () => {
   };
 
   const clearQuoteAndImages = () => {
-    setQuote(emptyQuote);
+    setQuote({
+      content: "",
+      author: "",
+      tags: [],
+    });
     setImages("");
   };
   useEffect(() => {
@@ -155,6 +188,7 @@ const QuoteGenerator: React.FC = () => {
       handleDownload();
       setDownloadInitiated(false);
     }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [downloadInitiated]);
   return (
     <div className="relative quote-generator flex justify-center items-center flex-col ">
@@ -184,7 +218,7 @@ const QuoteGenerator: React.FC = () => {
             <div className="absolute top-0 left-0 w-full h-full bg-black opacity-70 rounded-md"></div>
             <div className=" absolute top-10 -right-16 p-5 bg-blue-300 text-white rounded-sm">
 
-              <p>{quote.tags[0]}</p>
+              <p>{quote.tags}</p>
             </div>
 
           </div>

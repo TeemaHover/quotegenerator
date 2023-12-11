@@ -1,8 +1,6 @@
 import axios from 'axios';
 import { NextApiRequest, NextApiResponse } from 'next';
-const unsplashApi = axios.create({
-  baseURL: 'https://api.unsplash.com',
-});
+
 
 export default async function handler(req:NextApiRequest, res:NextApiResponse) {
 
