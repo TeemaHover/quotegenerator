@@ -3,7 +3,7 @@ import React, { useState, useEffect } from "react";
 import Quote from "./quote";
 import axios from "axios";
 
-
+import QRCode from "qrcode.react";
 import Loading from "./loading";
 import ShowImage from "./image";
 
@@ -22,8 +22,10 @@ const QuoteGenerator: React.FC = () => {
 
 
   const [isLoading, setIsLoading] = useState(false);
-
+  const [storedIds, setStoredIds] = useState<string[]>([]);
   const [images, setImages] = useState("");
+  const [randomQRCode, setRandomQRCode] = useState<string | null>(null);
+  const [qrCodeScanned, setQrCodeScanned] = useState(false);
 
   const getNewQuote = async () => {
     setIsLoading(true);
@@ -37,6 +39,7 @@ const QuoteGenerator: React.FC = () => {
           tags: data.tags,
         });
         console.log(data.tags);
+        generateRandomQRCode();
       } else {
         console.error("Failed to fetch a new quote. Status:", response.status);
       }
@@ -46,8 +49,8 @@ const QuoteGenerator: React.FC = () => {
     }
   };
 
-  let stored_id = "https://images.unsplash.com/photo-1557724630-96de91632c3b?ixid=M3w1MTYxNTl8MHwxfHNlYXJjaHwxfHx1bmRlZmluZWR8ZW58MHx8fHwxNzAyMjc2NjM0fDA&ixlib=rb-4.0.3";
-  let randomIndex = Math.floor(Math.random() * images.length);
+
+
   const handleSearch = async () => {
     try {
       const response = await axios.get(`/api/unsplash`, {
@@ -57,15 +60,26 @@ const QuoteGenerator: React.FC = () => {
       });
 
       if (response.status === 200) {
-        
-        randomIndex = Math.floor(Math.random() * 10);
-        if(stored_id !== response.data[randomIndex].urls.raw){
-          setImages(response.data[randomIndex].urls.raw);
-        }else{
-          setImages(response.data[randomIndex + 1].urls.raw);
+        const randomIndex = Math.floor(Math.random() * 10);
+
+        const imageUrl = response.data[randomIndex].urls.raw;
+
+
+        if (!storedIds.includes(imageUrl)) {
+
+          storedIds.push(imageUrl);
+          setImages(imageUrl);
+        } else {
+
+          const nextIndex = (randomIndex + 1) % 10;
+          const nextImageUrl = response.data[nextIndex].urls.raw;
+
+
+          storedIds.push(nextImageUrl);
+          setImages(nextImageUrl);
         }
-       
-        console.log(response.data[randomIndex].urls.raw);
+
+        console.log(imageUrl);
         setIsLoading(false);
       } else {
         console.error("Error fetching images");
@@ -174,6 +188,13 @@ const QuoteGenerator: React.FC = () => {
       document.body.removeChild(downloadLink);
     }
   };
+  const generateRandomQRCode = () => {
+
+    const randomString = Math.random().toString(36).substring(2, 15);
+
+
+    setRandomQRCode(randomString);
+  };
 
   const clearQuoteAndImages = () => {
     setQuote({
@@ -187,57 +208,75 @@ const QuoteGenerator: React.FC = () => {
     if (downloadInitiated) {
       handleDownload();
       setDownloadInitiated(false);
+      setQrCodeScanned(false)
     }
-    // eslint-disable-next-line react-hooks/exhaustive-deps
+
   }, [downloadInitiated]);
   return (
-    <div className="relative quote-generator flex justify-center items-center flex-col ">
-      <button
-        onClick={async function () {
-          // Clear existing quote and images
-          clearQuoteAndImages();
+    <>
 
-          // Get a new quote (assuming it's asynchronous)
-          await getNewQuote();
+      <div className="relative quote-generator flex justify-center items-center flex-col ">
+        <button
+          onClick={async function () {
 
-          // Handle the search based on the new quote
-          await handleSearch();
-        }}
-        className="text-blue-300 border-solid border-2 border-blue-300 rounded-md p-3 mb-5"
-      >
-        Get New Quote
-      </button>
+            clearQuoteAndImages();
 
-      {isLoading ? (
-        <Loading />
-      ) : (
-        <>
-          <div className="relative w-[768px] shadow-2xl rounded-md">
-            <Quote text={quote.content} author={quote.author} />
-            <ShowImage url={images} />
-            <div className="absolute top-0 left-0 w-full h-full bg-black opacity-70 rounded-md"></div>
-            <div className=" absolute top-10 -right-16 p-5 bg-blue-300 text-white rounded-sm">
 
-              <p>{quote.tags}</p>
+            await getNewQuote();
+
+
+            await handleSearch();
+          }}
+          className="flex-initial bg-black/75 text-white font-semibold px-3 py-4 rounded-full my-4"
+        >
+          Get New Quote
+        </button>
+
+        {isLoading ? (
+          <Loading />
+        ) : (
+          <>
+            <div className="relative w-[768px] shadow-2xl rounded-md">
+              <Quote text={quote.content} author={quote.author} />
+              <ShowImage url={images} />
+              {images ? (
+                <div className="absolute top-0 left-0 w-full h-full bg-black opacity-70 rounded-md"></div>
+              ) : <div className="absolute top-0 left-0 w-full h-full bg-white opacity-70 rounded-md"></div>}
+
+
+              {images ? (<div className=" absolute top-10 -right-16 p-5 bg-zinc-800 text-white rounded-sm">
+                <p>{quote.tags}</p>
+              </div>) : null}
+
             </div>
+            {quote ? (qrCodeScanned ? (
+              <button
+                onClick={async function () {
 
-          </div>
-          <button
-            onClick={async function () {
-              // Get a new quote (assuming it's asynchronous)
-              await combineImageAndQuote();
+                  await combineImageAndQuote();
 
-              // Handle the search based on the new quote
+                }}
+                className="flex-initial bg-black/75 text-white font-semibold px-3 py-4 rounded-full my-4"
+              >
+                Download
+              </button>
+            ) : (
+              <div className="mt-5 flex justify-center items-center flex-col">
+                {randomQRCode !== null && (
+                  <>
+                    <QRCode value={randomQRCode} />
 
-            }}
-            className="text-blue-300 border-solid border-2 border-blue-300 rounded-md p-3 mb-5 mt-5"
-          >
-            Download
-          </button>
+                    <button className="flex-initial bg-black/75 text-white font-semibold px-6 py-4 rounded-full my-4" onClick={() => setQrCodeScanned(true)}>Check</button>
+                  </>
+                )}
 
-        </>
-      )}
-    </div>
+              </div>
+            )) : null}
+
+          </>
+        )}
+      </div>
+    </>
   );
 };
 

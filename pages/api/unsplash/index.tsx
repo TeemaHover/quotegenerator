@@ -2,14 +2,14 @@ import axios from 'axios';
 import { NextApiRequest, NextApiResponse } from 'next';
 
 
-export default async function handler(req:NextApiRequest, res:NextApiResponse) {
+export default async function handler(req: NextApiRequest, res: NextApiResponse) {
 
-  const {method} = req
-  
+  const { method } = req
+
   if (method === 'GET') {
     const query = req.query.query;
     const accessKey = 'IY551ZQ33t1tc4sxI16PTTefWVZEBIbIapWCOkmMmi0'; // Replace with your Unsplash access key
-    const apiUrl = `https://api.unsplash.com/search/photos?query=${query}&client_id=${accessKey}`;
+    const apiUrl = `https://api.unsplash.com/search/photos?query=${query},hd&client_id=${accessKey}`;
     const temp = "https://api.unsplash.com/search/photos?query=wisdom&client_id=IY551ZQ33t1tc4sxI16PTTefWVZEBIbIapWCOkmMmi0"
 
     console.log(temp)
