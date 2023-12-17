@@ -17,7 +17,7 @@ export default function Home() {
 
         <QuoteGenerator />
       </main>
-      <div className="flex justify-center items-center max-w-7xl mx-auto pt-12 flex-col">
+      <div className="flex justify-center items-center max-w-7xl mx-auto py-12 flex-col">
         <About />
       </div>
       <Footer />
